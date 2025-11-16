@@ -50,7 +50,7 @@ def test():
         with torch.no_grad():
             res = model(inp)
 
-        save_image(res, os.path.join("result", test_data[3][0]))
+        save_image(res, os.path.join("result", test_data[2][0]))
 
         stat_psnr += peak_signal_noise_ratio(res, tar, data_range=1).item()
         stat_ssim += structural_similarity_index_measure(res, tar, data_range=1).item()
@@ -58,7 +58,6 @@ def test():
 
     stat_psnr /= size
     stat_ssim /= size
-    stat_lpips /= size
     stat_mae /= size
 
     print("MAE: {}, PSNR: {}, SSIM: {}".format(stat_mae, stat_psnr, stat_ssim))
