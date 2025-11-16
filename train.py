@@ -51,15 +51,34 @@ def train():
     optimizer_b = optim.AdamW(model.parameters(), lr=opt.OPTIM.LR_INITIAL, betas=(0.9, 0.999), eps=1e-8)
     scheduler_b = optim.lr_scheduler.CosineAnnealingLR(optimizer_b, opt.OPTIM.NUM_EPOCHS, eta_min=opt.OPTIM.LR_MIN)
 
-    trainloader, testloader = accelerator.prepare(trainloader, testloader)
-    model = accelerator.prepare(model)
-    optimizer_b, scheduler_b = accelerator.prepare(optimizer_b, scheduler_b)
-
     start_epoch = 1
     best_epoch = 1
     best_psnr = 0
 
     size = len(testloader)
+
+    resume_path = opt.TRAINING.RESUME   # đường dẫn checkpoint trong config
+
+    if resume_path is not None and os.path.isfile(resume_path):
+        print(f"Loading checkpoint from {resume_path}")
+        checkpoint = torch.load(resume_path, map_location='cpu')
+
+        model.load_state_dict(checkpoint['state_dict'])
+
+        if 'optimizer' in checkpoint:
+            optimizer_b.load_state_dict(checkpoint['optimizer'])
+        if 'scheduler' in checkpoint:
+            scheduler_b.load_state_dict(checkpoint['scheduler'])
+
+        start_epoch = checkpoint.get('epoch', 1) + 1
+        best_psnr = checkpoint.get('best_psnr', 0)
+        best_epoch = checkpoint.get('best_epoch', 1)
+
+        print(f"Resume from epoch {start_epoch}, best PSNR = {best_psnr}")
+
+    trainloader, testloader = accelerator.prepare(trainloader, testloader)
+    model = accelerator.prepare(model)
+    optimizer_b, scheduler_b = accelerator.prepare(optimizer_b, scheduler_b)
 
     # training
     for epoch in range(start_epoch, opt.OPTIM.NUM_EPOCHS + 1):
@@ -114,7 +133,12 @@ def train():
                 best_epoch = epoch
                 best_psnr = psnr
                 save_checkpoint({
+                    'epoch': epoch,
+                    'best_psnr': best_psnr,
+                    'best_epoch': best_epoch,
                     'state_dict': model.state_dict(),
+                    'optimizer': optimizer_b.state_dict(),
+                    'scheduler': scheduler_b.state_dict()
                 }, epoch, opt.MODEL.SESSION, opt.TRAINING.SAVE_DIR)
 
             accelerator.log({
