@@ -3,7 +3,7 @@ import torch
 import numbers
 import torch.nn as nn
 import torch.nn.functional as F
-
+from cswinn import CSWinTransformer
 
 ## Channel Attention Layer
 class CALayer(nn.Module):
@@ -499,8 +499,7 @@ class Aggreation(nn.Module):
     def forward(self, x):
         return self.conv(self.attention(x))
     
-
-class Model(nn.Module):
+'''class Model(nn.Module):
     def __init__(self, in_nc=3, out_nc=3, base_nf=16):
         super(Model, self).__init__()
 
@@ -519,7 +518,6 @@ class Model(nn.Module):
         self.conv2 = ConvLayer(base_nf, out_nc, 1, 1, bias=True)
 
     def forward(self, inp):
-        
         out = self.conv1(inp)
         out_1_1 = self.color1(out)
         out_1_2 = self.enhance(out)
@@ -534,15 +532,44 @@ class Model(nn.Module):
 
         out = self.conv2(out)
 
+        return out.clamp(0, 1)'''
+
+
+# Sử dụng CSWinTransformer làm mô hình chính
+class Model(nn.Module):
+    def __init__(self, in_nc=3, out_nc=3, base_nf=512):
+        super(Model, self).__init__()
+        self.cswin = CSWinTransformer()
+        
+        self.upsample = nn.Upsample(size=(256, 256), mode='bilinear', align_corners=False)
+
+        self.transformer = nn.Sequential(*[TransformerBlock(dim=base_nf) for _ in range(3)])
+
+        self.conv2 = ConvLayer(base_nf, out_nc, 1, 1, bias=True)
+
+    def forward(self, inp):
+        out = self.cswin(inp)
+
+        out = self.upsample(out)
+
+        out = self.transformer(out)
+
+        out = self.conv2(out)
+
         return out.clamp(0, 1)
 
 
 if __name__ == '__main__':
-    from thop import profile, clever_format
-    t = torch.randn(1, 3, 256, 256).cuda()
-    model = Model().cuda()
-    flops, params = profile(model, inputs=(t,))
-    flops, params = clever_format([flops, params], "%.3f")
-    print(flops)
-    print(params)
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+    t = torch.randn(1, 3, 256, 256, device=device)
+
+    model = Model().to(device)
+
+    model.eval()
+    with torch.no_grad():
+        out = model(t)
+
+    print("output shape:", out.shape)
+
 
