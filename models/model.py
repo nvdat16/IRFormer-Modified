@@ -537,9 +537,11 @@ class Aggreation(nn.Module):
 
 # Sử dụng CSWinTransformer làm mô hình chính
 class Model(nn.Module):
-    def __init__(self, in_nc=3, out_nc=3, base_nf=512):
+    def __init__(self, in_nc=3, out_nc=3, base_nf=16):
         super(Model, self).__init__()
         self.cswin = CSWinTransformer()
+
+        self.conv1 = ConvLayer(512, base_nf, 1, 1, bias=True)
         
         self.upsample = nn.Upsample(size=(256, 256), mode='bilinear', align_corners=False)
 
@@ -549,6 +551,8 @@ class Model(nn.Module):
 
     def forward(self, inp):
         out = self.cswin(inp)
+
+        out = self.conv1(out)
 
         out = self.upsample(out)
 
