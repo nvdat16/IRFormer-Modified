@@ -3,7 +3,7 @@ import torch
 import numbers
 import torch.nn as nn
 import torch.nn.functional as F
-from cswinn import CSWinTransformer
+from .cswin import CSWinTransformer
 
 ## Channel Attention Layer
 class CALayer(nn.Module):
