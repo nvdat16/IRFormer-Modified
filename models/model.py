@@ -539,6 +539,11 @@ class Aggreation(nn.Module):
 class Model(nn.Module):
     def __init__(self, in_nc=3, out_nc=3, base_nf=16):
         super(Model, self).__init__()
+
+        self.conv0 = ConvLayer(in_nc, base_nf, 1, 1, bias=True)
+        self.color1 = MCEM(base_nf, base_nf*2)
+        self.enhance = Enhance()
+
         self.cswin = CSWinTransformer()
 
         self.conv1 = ConvLayer(512, base_nf, 1, 1, bias=True)
@@ -550,7 +555,11 @@ class Model(nn.Module):
         self.conv2 = ConvLayer(base_nf, out_nc, 1, 1, bias=True)
 
     def forward(self, inp):
-        out = self.cswin(inp)
+        out = self.conv0(inp)
+        out_1 = self.color1(out)
+        out_2 = self.enhance(out)
+
+        out = self.cswin(torch.cat((out, out_1, out_2), dim=1))
 
         out = self.conv1(out)
 
