@@ -499,7 +499,7 @@ class Aggreation(nn.Module):
     def forward(self, x):
         return self.conv(self.attention(x))
     
-'''class Model(nn.Module):
+class Model(nn.Module):
     def __init__(self, in_nc=3, out_nc=3, base_nf=16):
         super(Model, self).__init__()
 
@@ -532,44 +532,44 @@ class Aggreation(nn.Module):
 
         out = self.conv2(out)
 
-        return out.clamp(0, 1)'''
+        return out.clamp(0, 1)
 
 
 # Sử dụng CSWinTransformer làm mô hình chính
-class Model(nn.Module):
-    def __init__(self, in_nc=3, out_nc=3, base_nf=16):
-        super(Model, self).__init__()
+# class Model(nn.Module):
+#     def __init__(self, in_nc=3, out_nc=3, base_nf=16):
+#         super(Model, self).__init__()
 
-        self.conv0 = ConvLayer(in_nc, base_nf, 1, 1, bias=True)
-        self.color1 = MCEM(base_nf, base_nf*2)
-        self.enhance = Enhance()
+#         self.conv0 = ConvLayer(in_nc, base_nf, 1, 1, bias=True)
+#         self.color1 = MCEM(base_nf, base_nf*2)
+#         self.enhance = Enhance()
 
-        self.cswin = CSWinTransformer()
+#         self.cswin = CSWinTransformer()
 
-        self.conv1 = ConvLayer(512, base_nf, 1, 1, bias=True)
+#         self.conv1 = ConvLayer(512, base_nf, 1, 1, bias=True)
         
-        self.upsample = nn.Upsample(size=(256, 256), mode='bilinear', align_corners=False)
+#         self.upsample = nn.Upsample(size=(256, 256), mode='bilinear', align_corners=False)
 
-        self.transformer = nn.Sequential(*[TransformerBlock(dim=base_nf) for _ in range(3)])
+#         self.transformer = nn.Sequential(*[TransformerBlock(dim=base_nf) for _ in range(3)])
 
-        self.conv2 = ConvLayer(base_nf, out_nc, 1, 1, bias=True)
+#         self.conv2 = ConvLayer(base_nf, out_nc, 1, 1, bias=True)
 
-    def forward(self, inp):
-        out = self.conv0(inp)
-        out_1 = self.color1(out)
-        out_2 = self.enhance(out)
+#     def forward(self, inp):
+#         out = self.conv0(inp)
+#         out_1 = self.color1(out)
+#         out_2 = self.enhance(out)
 
-        out = self.cswin(torch.cat((out, out_1, out_2), dim=1))
+#         out = self.cswin(torch.cat((out, out_1, out_2), dim=1))
 
-        out = self.conv1(out)
+#         out = self.conv1(out)
 
-        out = self.upsample(out)
+#         out = self.upsample(out)
 
-        out = self.transformer(out)
+#         out = self.transformer(out)
 
-        out = self.conv2(out)
+#         out = self.conv2(out)
 
-        return out.clamp(0, 1)
+#         return out.clamp(0, 1)
 
 
 if __name__ == '__main__':
